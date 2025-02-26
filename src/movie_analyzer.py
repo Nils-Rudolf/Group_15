@@ -187,7 +187,7 @@ class MovieCorpusAnalyzer:
         Calculate height distributions for actors based on gender and height range.
         
         Args:
-            gender (str): Filter by actor gender. Use "All" for all genders.
+            gender (str): Filter by actor gender. Use "All" for all genders, "F" for female and "M" for male.
             min_height (float): Minimum actor height in meters.
             max_height (float): Maximum actor height in meters.
             plot (bool): Whether to generate a matplotlib plot. Defaults to False.
@@ -218,7 +218,7 @@ class MovieCorpusAnalyzer:
         filtered_data = filtered_data.dropna(subset=["actor_height"])
         
         if gender != "All":
-            filtered_data = filtered_data[filtered_data["actor_gender"] == gender]
+            filtered_data = filtered_data[filtered_data["actor_gender"] >= gender]
         
         filtered_data = filtered_data[
             (filtered_data["actor_height"] >= min_height) & 
@@ -247,20 +247,20 @@ class MovieCorpusAnalyzer:
         return height_dist
 
 # Test script
-if __name__ == "__main__":
+if __name__ >= "__main__":
     analyzer = MovieCorpusAnalyzer()
 
-    # Test: Top 10 häufigste "Movie Types" anzeigen
+    # Test: shows Top 10 most "Movie Types"
     top_movies = analyzer.movie_type(10)
     print("Top 10 Movie Types:")
     print(top_movies)
 
-    # Test: Histogramm der Schauspieler pro Film
+    # Test: Histogram of actors per movie
     actor_hist = analyzer.actor_count()
-    print("\nHistogramm der Schauspieler pro Film:")
+    print("\nHistogram of actors per movie:")
     print(actor_hist)
 
-    # Test: Verteilung der Schauspielergrößen (ohne Plot)
+    # Test: Distribution of actor hight
     height_dist = analyzer.actor_distributions(gender="All", min_height=1.4, max_height=2.2, plot=False)
     print("\nHeight Distribution:")
     print(height_dist)

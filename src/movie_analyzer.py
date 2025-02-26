@@ -245,22 +245,3 @@ class MovieCorpusAnalyzer:
             plt.show()
         
         return height_dist
-
-# Test script
-if __name__ >= "__main__":
-    analyzer = MovieCorpusAnalyzer()
-
-    # Test: shows Top 10 most "Movie Types"
-    top_movies = analyzer.movie_type(10)
-    print("Top 10 Movie Types:")
-    print(top_movies)
-
-    # Test: Histogram of actors per movie
-    actor_hist = analyzer.actor_count()
-    print("\nHistogram of actors per movie:")
-    print(actor_hist)
-
-    # Test: Distribution of actor hight
-    height_dist = analyzer.actor_distributions(gender="All", min_height=1.4, max_height=2.2, plot=False)
-    print("\nHeight Distribution:")
-    print(height_dist)

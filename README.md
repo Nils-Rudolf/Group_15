@@ -65,7 +65,7 @@ pytest
 
 ## Dataset
 
-The application uses the CMU Movie Corpus dataset, specifically the `character.metadata.tsv` file which contains the following columns:
+The application uses the [CMU Movie Corpus dataset](https://www.cs.cmu.edu/~ark/personas/data/MovieSummaries.tar.gz), specifically the `character.metadata.tsv` file which contains the following columns ([Documentation](https://www.cs.cmu.edu/~ark/personas/)):
 
 1. Wikipedia movie ID
 2. Freebase movie ID

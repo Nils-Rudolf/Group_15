@@ -1,7 +1,3 @@
-#pip install -r requirements.txt
-#pytest
-#streamlit run app.py
-
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd

@@ -2,7 +2,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-from src.movie_analyzer import MovieCorpusAnalyzer
+from src.movie_analyzer import MovieCorpusAnalyzer, MovieCorpusAnalyzerConfig
 from src.utils import (
     create_movie_type_plot,
     create_actor_count_plot,
@@ -24,7 +24,12 @@ st.markdown("Analysis of the CMU Movie Corpus character metadata")
 @st.cache_resource
 def get_analyzer():
     with st.spinner("Loading data... This might take a while for the first time."):
-        return MovieCorpusAnalyzer()
+        # Create a configuration object
+        config = MovieCorpusAnalyzerConfig(
+            data_url="http://www.cs.cmu.edu/~ark/personas/data/MovieSummaries.tar.gz",
+            download_dir="downloads"  # Specify a valid directory
+        )
+        return MovieCorpusAnalyzer(config=config)
 
 try:
     analyzer = get_analyzer()
@@ -47,7 +52,16 @@ try:
         )
         
         # Get data and create plot
-        movie_types_df = analyzer.movie_type(N=n_value)
+        movie_types_data = analyzer.movie_type(N=n_value)
+        
+        # Convert Pydantic models to DataFrame if needed
+        if hasattr(movie_types_data[0], "__dict__") and not isinstance(movie_types_data, pd.DataFrame):
+            movie_types_df = pd.DataFrame([{
+                "Movie_Type": item.movie_type,
+                "Count": item.count
+            } for item in movie_types_data])
+        else:
+            movie_types_df = movie_types_data
         
         # Show plot
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -70,7 +84,16 @@ try:
         st.markdown("Shows the distribution of number of actors per movie.")
         
         # Get data and create plot
-        actor_count_df = analyzer.actor_count()
+        actor_count_data = analyzer.actor_count()
+        
+        # Convert Pydantic models to DataFrame if needed
+        if hasattr(actor_count_data[0], "__dict__") and not isinstance(actor_count_data, pd.DataFrame):
+            actor_count_df = pd.DataFrame([{
+                "Number_of_Actors": item.number_of_actors,
+                "Movie_Count": item.movie_count
+            } for item in actor_count_data])
+        else:
+            actor_count_df = actor_count_data
         
         # Show plot
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -125,11 +148,20 @@ try:
         else:
             # Get data and create plot
             try:
-                height_dist_df = analyzer.actor_distributions(
+                height_dist_data = analyzer.actor_distributions(
                     gender=gender, 
                     min_height=min_height, 
                     max_height=max_height
                 )
+                
+                # Convert Pydantic models to DataFrame if needed
+                if hasattr(height_dist_data[0], "__dict__") and not isinstance(height_dist_data, pd.DataFrame):
+                    height_dist_df = pd.DataFrame([{
+                        "Height": item.height,
+                        "Count": item.count
+                    } for item in height_dist_data])
+                else:
+                    height_dist_df = height_dist_data
                 
                 # Show plot
                 fig, ax = plt.subplots(figsize=(10, 6))

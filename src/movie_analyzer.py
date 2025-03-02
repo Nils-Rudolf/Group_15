@@ -6,6 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from typing import Optional, Union, Dict, List, Tuple
 import numpy as np
+from pydantic import BaseModel, Field,field_validator, HttpUrl
+from typing import Optional, Union, Dict, List, Tuple, ClassVar
+
 
 # Configure logging
 logging.basicConfig(
@@ -13,6 +16,28 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+#pydantic model for configuration
+class MovieCorpusAnalyzerConfig(BaseModel): 
+    """
+    Configuration model for MovieCorpusAnalyzer.
+    
+    This Pydantic model validates the configuration parameters for the MovieCorpusAnalyzer.
+    """
+    data_url: HttpUrl = Field(
+        default="http://www.cs.cmu.edu/~ark/personas/data/MovieSummaries.tar.gz",
+        description="URL to download the dataset from"
+    )
+    download_dir: str = Field(
+        default="downloads", 
+        description="Directory to store downloaded and extracted files"
+    )
+    
+    @field_validator('download_dir')
+    def directory_must_be_valid(cls, v):
+        if not isinstance(v, str) or not v:
+            raise ValueError("download_dir must be a non-empty string")
+        return v
 
 class MovieCorpusAnalyzer:
     """
@@ -29,30 +54,37 @@ class MovieCorpusAnalyzer:
         data (pd.DataFrame): DataFrame containing the character metadata.
         column_names (List[str]): Names of columns in the character metadata.
     """
+    #column names as ClassVar for type safety
+    column_names: ClassVar[List[str]] = [
+        "wikipedia_movie_id", "freebase_movie_id", "release_date", "character_name",
+        "actor_dob", "actor_gender", "actor_height", "actor_ethnicity",
+        "actor_name", "actor_age_at_release", "freebase_char_actor_map_id",
+        "freebase_character_id", "freebase_actor_id" 
+    ]
     
     def __init__(self, 
-                data_url: str = "http://www.cs.cmu.edu/~ark/personas/data/MovieSummaries.tar.gz",
-                download_dir: str = "downloads") -> None:
+                config: Optional[MovieCorpusAnalyzerConfig] = None,
+                **kwargs) -> None:
         """
         Initialize the MovieCorpusAnalyzer with data from the CMU Movie Corpus.
         
         Args:
-            data_url (str): URL to download the dataset from.
-            download_dir (str): Directory to store downloaded and extracted files.
+            config (MovieCorpusAnalyzerConfig, optional): Configuration for the analyzer.
+            **kwargs: Additional keyword arguments to create or override the configuration.
         """
-        self.data_url = data_url
-        self.download_dir = download_dir
-        self.archive_path = os.path.join(download_dir, "MovieSummaries.tar.gz")
-        self.data_path = os.path.join(download_dir, "character.metadata.tsv")
-        self.column_names = [
-            "wikipedia_movie_id", "freebase_movie_id", "release_date", "character_name",
-            "actor_dob", "actor_gender", "actor_height", "actor_ethnicity",
-            "actor_name", "actor_age_at_release", "freebase_char_actor_map_id",
-            "freebase_character_id", "freebase_actor_id"
-        ]
-        
+        # Create config from provided parameters or defaults
+        if config is None:
+            config_dict = kwargs
+            self.config = MovieCorpusAnalyzerConfig(**config_dict)
+        else:
+            self.config = config
+            
+        # Set paths based on config
+        self.archive_path = os.path.join(self.config.download_dir, "MovieSummaries.tar.gz")
+        self.data_path = os.path.join(self.config.download_dir, "character.metadata.tsv")
+
         # Create download directory if it doesn't exist
-        os.makedirs(download_dir, exist_ok=True)
+        os.makedirs(self.config.download_dir, exist_ok=True)
         
         # Download data if needed
         self._download_data()
@@ -90,7 +122,7 @@ class MovieCorpusAnalyzer:
                     for member in tar.getmembers():
                         if member.name.endswith("character.metadata.tsv"):
                             member.name = os.path.basename(member.name)  # Remove directory structure
-                            tar.extract(member, path=self.download_dir)
+                            tar.extract(member, path=self.config.download_dir)
                             logger.info("Extraction completed successfully.")
                             break
                     else:
@@ -127,6 +159,33 @@ class MovieCorpusAnalyzer:
             logger.error(f"Failed to load data: {e}")
             raise
     
+class MovieTypeResult(BaseModel):
+    """Model for movie type analysis results."""
+    movie_type: str = Field(..., alias="Movie_Type")
+    count: int = Field(..., alias="Count")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class ActorCountResult(BaseModel):
+    """Model for actor count results."""
+    number_of_actors: int = Field(..., alias="Number_of_Actors")
+    movie_count: int = Field(..., alias="Movie_Count")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class HeightDistributionResult(BaseModel):
+    """Model for height distribution results."""
+    height: float
+    count: int
+    
+    class Config:
+        allow_population_by_field_name = True
+
+class MovieCorpusAnalyzer(MovieCorpusAnalyzer):  # Extend the previous class
+    """Extended MovieCorpusAnalyzer with Pydantic-validated methods."""
+
     def movie_type(self, N: int = 10) -> pd.DataFrame:
         """
         Calculate the N most common types of movies in the dataset.
@@ -218,7 +277,7 @@ class MovieCorpusAnalyzer:
         filtered_data = filtered_data.dropna(subset=["actor_height"])
         
         if gender != "All":
-            filtered_data = filtered_data[filtered_data["actor_gender"] >= gender]
+            filtered_data = filtered_data[filtered_data["actor_gender"] == gender]
         
         filtered_data = filtered_data[
             (filtered_data["actor_height"] >= min_height) & 
@@ -245,3 +304,4 @@ class MovieCorpusAnalyzer:
             plt.show()
         
         return height_dist
+        

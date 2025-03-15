@@ -298,7 +298,7 @@ try:
                     """
                     
                     # Call Ollama with the prompt
-                    response = ollama.chat(model="llama3", messages=[
+                    response = ollama.chat(model="deepseek-r1:1.5b", messages=[
                         {
                             "role": "user",
                             "content": prompt
@@ -326,7 +326,7 @@ try:
                     Answer only Yes or No, followed by a brief explanation.
                     """
                     
-                    comparison_response = ollama.chat(model="llama3", messages=[
+                    comparison_response = ollama.chat(model="deepseek-r1:1.5b", messages=[
                         {
                             "role": "user",
                             "content": second_prompt

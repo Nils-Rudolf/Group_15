@@ -237,24 +237,37 @@ try:
 
     elif page == "Text Classification":
         st.title("Movie Genre Classification with LLM")
-        
-        # Helper function to get a random movie
+                
         def get_random_movie():
-            # Assuming movie_metadata has the necessary data
-            # Select a random index
+            """
+            Select a random movie from the dataset and extract relevant details.
+            """
+            # Select a random movie row
             random_idx = random.randint(0, len(analyzer.movie_metadata) - 1)
             movie = analyzer.movie_metadata.iloc[random_idx]
             
-            # Get title and genres
+            # Extract title
             title = movie.get('movie_name', 'Unknown Title')
             
-            # Get a summary (not available in the current data structure, using placeholder)
-            summary = "Summary not available in the dataset"
+            # Extract summary (check if a summary column exists)
+            summary = movie.get('summary', None)  # Replace 'summary' with the actual column name if available
             
-            # Get genres from the movie data
-            genres = movie.get('genres', {})
-            if isinstance(genres, dict):
-                genres_list = list(genres.values())
+            # If no summary, use placeholder
+            if not summary or pd.isna(summary):
+                summary = "Summary not available in the dataset"
+                
+            # Extract genres (handling dictionary format)
+            genres_raw = movie.get('genres', {})
+            
+            # Ensure it's a dictionary before extracting values
+            if isinstance(genres_raw, dict):
+                genres_list = list(genres_raw.values())
+            elif isinstance(genres_raw, str):  # If stored as a string, try converting it
+                try:
+                    genres_dict = eval(genres_raw)  # Safe conversion
+                    genres_list = list(genres_dict.values()) if isinstance(genres_dict, dict) else []
+                except:
+                    genres_list = []
             else:
                 genres_list = []
                 
@@ -263,7 +276,7 @@ try:
                 'summary': summary,
                 'genres': genres_list
             }
-        
+            
         # Initialize session state for the movie data if it doesn't exist
         if 'current_movie' not in st.session_state:
             st.session_state.current_movie = get_random_movie()
@@ -292,14 +305,14 @@ try:
                      f"Title: {movie['title']}\n\nSummary: {movie['summary']}", 
                      height=200, 
                      key="movie_info")
-        
+                    
         # Second text box: Database Genres
         st.subheader("Database Genres")
         st.text_area("Genres from Database", 
                      ", ".join(movie['genres']) if movie['genres'] else "No genres available", 
                      height=100, 
                      key="db_genres")
-        
+                    
         # Third text box: LLM Classification
         st.subheader("LLM Genre Classification")
         

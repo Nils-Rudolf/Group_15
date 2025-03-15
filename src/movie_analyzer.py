@@ -300,7 +300,7 @@ class MovieCorpusAnalyzer:
         
         Args:
             genre (str, optional): The genre to filter by. If None, includes all movies.
-            
+        
         Returns:
             pd.DataFrame: DataFrame with years and movie counts
         """
@@ -309,23 +309,37 @@ class MovieCorpusAnalyzer:
             self.movie_metadata['movie_release_date'], 
             errors='coerce'
         ).dt.year
-        
+    
         if genre is None:
             # Count all movies per year
             releases_df = self.movie_metadata['year'].value_counts().reset_index()
             releases_df.columns = ['Year', 'Count']
         else:
-            # Filter for movies of the specified genre
-            genre_movies = self.movie_metadata[self.movie_metadata['genres'].apply(
-                lambda x: isinstance(x, dict) and any(genre.lower() in v.lower() for v in x.values() if v is not None)
-            )]
+            # Filter for movies of the specified genre - fixed matching logic
+            def contains_genre(genres_dict, target_genre):
+                if not isinstance(genres_dict, dict):
+                    return False
+            
+                target_lower = target_genre.lower()
+                for k, v in genres_dict.items():
+                    if v is not None and target_lower in str(v).lower():
+                        return True
+                return False
+        
+            genre_movies = self.movie_metadata[
+                self.movie_metadata['genres'].apply(
+                    lambda x: contains_genre(x, genre)
+                )
+            ]
+        
+            # Create the dataframe with counts
             releases_df = genre_movies['year'].value_counts().reset_index()
             releases_df.columns = ['Year', 'Count']
-        
+    
         # Sort by year and remove NaN years
         releases_df = releases_df.dropna().sort_values('Year')
         releases_df['Year'] = releases_df['Year'].astype(int)
-        
+    
         return releases_df
     
     def ages(self, time_unit='Y'):

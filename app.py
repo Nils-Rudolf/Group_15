@@ -174,16 +174,30 @@ try:
         
         # Get the dataframe using your releases method
         releases_df = analyzer.releases(genre=genre_param)
-        
-        # Plot the data
-        fig, ax = plt.subplots(figsize=(12, 6))
-        sns.barplot(x='Year', y='Count', data=releases_df, ax=ax)
-        ax.set_title(f"Movie Releases by Year {f'({selected_genre})' if genre_param else ''}")
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Number of Movies")
-        plt.xticks(rotation=90)
-        st.pyplot(fig)
-        
+
+        # Check if we have data to plot
+        if releases_df.empty:
+            st.warning(f"No data found for genre: {selected_genre}. Try a different genre.")
+        else:
+            # Plot the data
+            fig, ax = plt.subplots(figsize=(12, 6))
+            sns.barplot(x='Year', y='Count', data=releases_df, ax=ax)
+            ax.set_title(f"Movie Releases by Year {f'({selected_genre})' if genre_param else ''}")
+            ax.set_xlabel("Year")
+            ax.set_ylabel("Number of Movies")
+
+            # Sample the years to avoid overcrowding
+            n = max(1, len(releases_df) // 25)  # Show approximately 25 labels
+            ticks = range(0, len(releases_df), n)
+            tick_labels = [str(releases_df.iloc[i]['Year']) for i in ticks]
+
+            # Set the selected ticks and rotated labels
+            plt.xticks(ticks, tick_labels, rotation=90)
+
+            #layout
+            st.pyplot(fig)
+
+        #new section for birth statistics
         st.header("Birth Statistics")
 
         # Create a dropdown for time unit selection
@@ -208,8 +222,15 @@ try:
             ax.set_ylabel("Number of Births")
             
             if time_unit == "Year":
-                plt.xticks(rotation=90)
+                # Sample the years to avoid overcrowding
+                n = max(1, len(ages_df) // 25)  # Show approximately 25 labels
+                ticks = range(0, len(ages_df), n)
+                tick_labels = [str(ages_df.iloc[i][x_col]) for i in ticks]
+
+                # Set the selected ticks and rotated labels
+                plt.xticks(ticks, tick_labels, rotation=90)
                 
+            #layout    
             st.pyplot(fig)
         else:
             st.warning("No birth data available to display.")

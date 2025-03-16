@@ -2,9 +2,7 @@
  Nova Advanced Programming Group Project
 
 Student Infos:
-Nils Rudolf, 63855, 63855@novasbe.pt
-Paulina Gründel, 63943, 63943@novasbe.pt
-Niklas Keckeisen, 63488, 63488@novasbe.pt
+Nils Rudolf, 63855, 63855@novasbe.pt; Paulina Gründel, 63943, 63943@novasbe.pt; Niklas Keckeisen, 63488, 63488@novasbe.pt
 
 
 # CMU Movie Corpus Analyzer

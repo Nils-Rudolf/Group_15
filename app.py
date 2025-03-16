@@ -1,17 +1,9 @@
+import random
 import streamlit as st
 import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from src.movie_analyzer import MovieCorpusAnalyzer
-from src.utils import (
-    create_movie_type_plot,
-    create_actor_count_plot,
-    create_height_distribution_plot
-)
 import seaborn as sns
-import random
 import ollama
-
+from src.movie_analyzer import MovieCorpusAnalyzer
 
 # Set page config
 st.set_page_config(

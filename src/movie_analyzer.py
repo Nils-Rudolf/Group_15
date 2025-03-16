@@ -54,11 +54,6 @@ class MovieCorpusAnalyzer:
         
         # Create download directory if it doesn't exist
         os.makedirs(download_dir, exist_ok=True)
-        
-        # remove corrupted file
-        if os.path.exists(self.archive_path):
-            logger.info("Removing potentially corrupted archive file...")
-            os.remove(self.archive_path)
 
         # Download data if needed
         try:

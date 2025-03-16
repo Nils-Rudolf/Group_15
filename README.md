@@ -13,20 +13,20 @@ A Streamlit application for analyzing the CMU Movie Corpus dataset, specifically
 
 ```
 Group_15/
-├── .gitignore
+├── LICENSE
 ├── README.md
-├── requirements.txt
 ├── app.py
+├── downloads
 ├── pytest.ini
-├── src/
-│   ├── __init__.py
-│   ├── movie_analyzer.py
-│   └── utils.py
-├── tests/
-│   ├── __init__.py
-│   └── test_movie_analyzer.py
-└── downloads/
-    └── .gitkeep
+├── requirements.txt
+├── src
+│   ├── __init__.py
+│   ├── movie_analyzer.py
+│   └── utils.py
+├── structure.txt
+└── tests
+    ├── __init__.py
+    └── test_movie_analyzer.py
 ```
 
 ## Features
@@ -49,8 +49,8 @@ Group_15/
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/movie_corpus_analysis.git
-   cd movie_corpus_analysis
+   git clone https://github.com/Nils-Rudolf/Group_15.git
+   cd Group_15
    ```
 
 2. Install the required dependencies:
@@ -60,7 +60,19 @@ Group_15/
 
 ## Usage
 
-Run the Streamlit app:
+1. Download [Ollama](https://ollama.com/) for your machine.
+
+2. Run 
+```bash
+ollama serve 
+```
+
+3. Run a LLM model of your choice ([Ollama](https://github.com/ollama/ollama)):
+```bash
+ollama run deepseek-r1:1.5b
+```
+
+4. Run the Streamlit app:
 ```bash
 streamlit run app.py
 ```
@@ -91,3 +103,12 @@ The application uses the [CMU Movie Corpus dataset](https://www.cs.cmu.edu/~ark/
 11. Freebase character/actor map ID
 12. Freebase character ID
 13. Freebase actor ID
+
+## Essay:
+Connecting a local LLM text classification project to the United Nations' Sustainable Development Goals feels like a stretch. The SDGs focus on global challenges like poverty, education, climate change, and inequality, while this project is a technical exercise centered on analyzing movie metadata and predicting genres. We are wondering if this is some kind of LLM check. All that aside, there are potential indirect links that can be thought about with some imagination.
+
+One of them is to SDG 4: Quality Education. Text classification using LLMs like Ollama is a case in point of affordable, user-friendly AI technology that can be applied for education purposes. By integrating such tools into an educational platform, students can explore data science, natural language processing, and prompt engineering in an engaging way—e.g., through analysis of movies or other cultural data sets. This initiative could result in open-source education tools, making access to AI literacy a leveler for everyone and developing skills in accordance with inclusive, equitable education's vision.
+
+A weak but plausible link is to SDG 9: Industry, Innovation, and Infrastructure. Building and documenting a pipeline that employs local LLMs promotes innovation in lean, scalable AI. Compared to cloud models that require high infrastructure, Ollama runs locally, thereby making it deployable in resource-constrained environments. This can contribute to sustainable technology development, reducing reliance on energy-guzzling data centers and contributing to resilient infrastructure—a humble but meaningful recognition of SDG 9.
+
+Finally, consider SDG 16: Peace, Justice, and Strong Institutions. Proper text classification can, in a broader context, be applied to examine media material (e.g., movies) to identify violence themes, discrimination, or social justice themes. While this project is genre-focused, the technology itself can be utilized to monitor cultural narratives and assist in promoting peaceful and inclusive societies by being aware of how media influences thinking.

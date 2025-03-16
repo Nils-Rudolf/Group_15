@@ -1,3 +1,10 @@
+"""
+CMU Movie Corpus Analyzer application.
+
+A Streamlit web application for analyzing and visualizing data from
+the CMU Movie Corpus dataset, with features for classification
+using local LLMs.
+"""
 import random
 import streamlit as st
 import matplotlib.pyplot as plt

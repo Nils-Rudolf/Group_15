@@ -261,7 +261,7 @@ try:
         # Display information about using Ollama
         st.info("""
         This feature requires Ollama to be installed and running locally.
-        Please make sure you have Ollama installed and a model like 'llama3' or 'mistral' is available.
+        Please make sure you have Ollama installed and the model 'deepseek-r1:1.5b' is available.
         """)
         
         # Create the shuffle button
@@ -295,17 +295,16 @@ try:
         if st.button("Classify with LLM"):
             with st.spinner("Classifying genres using LLM..."):
                 try:
-                    # Much more explicit prompt
+                    # Even more explicit prompt with examples
                     prompt = f"""
-                    Your task is to analyze a movie description and classify it into standard film genres.
-                    Respond with ONLY a comma-separated list of film genres (like "Drama, Comedy, Action").
-                    Do not include the movie title, explanations, or any other text.
+                    Classify this movie into standard film genres only.
+                    OUTPUT FORMAT: Return ONLY a simple comma-separated list of genres.
                     
-                    Movie: {movie['title']}
-                    Description: {movie['summary']}
+                    Example input: "A tale of an orphan who discovers he's a wizard and goes to magic school"
+                    Example output: Fantasy, Adventure, Family
                     
-                    EXPECTED RESPONSE FORMAT:
-                    Comedy, Drama, Musical
+                    Input: {movie['summary']}
+                    Output:
                     """
                     
                     # Call Ollama with your installed model
@@ -314,53 +313,76 @@ try:
                         messages=[
                             {
                                 "role": "system",
-                                "content": "You are a movie genre classifier that ONLY outputs genres as a comma-separated list."
+                                "content": "You are a genre classifier that outputs ONLY genres as a comma-separated list with no explanation or thinking process."
                             },
                             {
                                 "role": "user",
                                 "content": prompt
                             }
                         ],
-                        options={"temperature": 0.1}  # Even lower temperature
+                        options={"temperature": 0.1}
                     )
                     
-                    # Process response to extract just genres
+                    # Get raw response for debugging only (don't show this to users in final version)
                     raw_response = response['message']['content'].strip()
                     
-                    # Debug output
-                    st.write(f"Raw LLM response: {raw_response}")
+                    # Store raw response for debugging purposes
+                    debug_response = raw_response  # Keep this for debugging
                     
-                    # Aggressive cleaning
+                    # AGGRESSIVE CLEANING:
+                    # Remove thinking part
                     if "<think>" in raw_response:
-                        cleaned = raw_response.split("<think>")[1].split("\n")[-1] if "\n" in raw_response else raw_response
-                    else:
-                        cleaned = raw_response
-                        
-                    # Remove any references to the movie title
-                    cleaned = cleaned.replace(movie['title'], "")
-                    
-                    # Remove common prefixes
-                    for prefix in ["Genres:", "genres:", "Genre:", "genre:", "Classifications:", "The genres are:"]:
-                        if prefix in cleaned:
-                            cleaned = cleaned.split(prefix, 1)[1].strip()
+                        thinking_parts = raw_response.split("<think>")
+                        if len(thinking_parts) > 1:
+                            raw_response = thinking_parts[1]
+                            if "\n" in raw_response:
+                                lines = raw_response.split("\n")
+                                # Take the last non-empty line as the genres
+                                for line in reversed(lines):
+                                    if line.strip() and any(c.isalpha() for c in line):
+                                        raw_response = line
+                                        break
+                                        
+                    # Extract just a list of common genre words
+                    common_genres = ["Comedy", "Drama", "Action", "Adventure", "Fantasy", "Horror", 
+                                  "Thriller", "Romance", "Science Fiction", "Sci-Fi", "Animation", 
+                                  "Family", "Musical", "Documentary", "Short Film", "War", "Western", 
+                                  "Mystery", "Crime", "Biography"]
+                                    
+                    # Find any common genre words in the text
+                    found_genres = []
+                    for genre in common_genres:
+                        if genre.lower() in raw_response.lower():
+                            found_genres.append(genre)
                             
-                    # Get clean list of genres
-                    llm_genres = [genre.strip() for genre in cleaned.split(",") if genre.strip()]
-                    
-                    # If we still don't have any genres, try a fallback approach
-                    if not llm_genres:
-                        common_genres = ["Action", "Comedy", "Drama", "Documentary", "Horror", "Thriller", 
-                                        "Romance", "Science Fiction", "Animation", "Musical", "Short Film"]
-                        # Find any genre words in the raw response
-                        llm_genres = [genre for genre in common_genres if genre.lower() in raw_response.lower()]
+                    # If we found genres this way, use them
+                    if found_genres:
+                        llm_genres = found_genres
+                    else:
+                        # Otherwise, try to extract a comma-separated list
+                        # Look for the most likely comma-separated part
+                        for line in raw_response.split("\n"):
+                            if "," in line and not line.startswith("<") and not "example" in line.lower():
+                                raw_response = line
+                                break
+                                
+                        # Remove any prefixes like "Genres:" or "Output:"
+                        for prefix in ["Genres:", "genres:", "Genre:", "genre:", "Classifications:", 
+                                      "The genres are:", "Output:", "My classification:"]:
+                            if prefix in raw_response:
+                                raw_response = raw_response.split(prefix, 1)[1].strip()
+                                
+                        # Get clean list of genres from the comma-separated list
+                        llm_genres = [genre.strip() for genre in raw_response.split(",") if genre.strip()]
                         
+                    # Store genres in session state
                     st.session_state.llm_genres = llm_genres
                     
-                    # Display the LLM genres
+                    # Display the LLM genres in a clear way
                     st.text_area("LLM Classified Genres", 
                                  ", ".join(llm_genres) if llm_genres else "No genres identified", 
                                  height=100, 
-                                 key="llm_genres_updated")
+                                 key="llm_genres_display")
                                 
                     # Now let's do the comparison
                     second_prompt = f"""
@@ -369,8 +391,15 @@ try:
                     Database genres: {', '.join(movie['genres'])}
                     LLM classified genres: {', '.join(llm_genres)}
                     
-                    Are the LLM's identified genres contained in the database genres list? 
-                    Answer only Yes or No, followed by a brief explanation.
+                    Are any of the LLM classified genres contained in the database genres list?
+                    OUTPUT FORMAT: Your response must start with "YES" or "NO" followed by a brief explanation that compares specific genres.
+                    
+                    For example:
+                    If database genres = "Comedy, Romance" and LLM genres = "Comedy, Drama"
+                    Respond with: "YES - Comedy is present in both lists, but Drama is not in the database genres."
+                    
+                    If database genres = "Action, Adventure" and LLM genres = "Comedy, Drama"
+                    Respond with: "NO - None of the LLM genres (Comedy, Drama) appear in the database genres (Action, Adventure)."
                     """
                     
                     comparison_response = ollama.chat(model="deepseek-r1:1.5b", messages=[
@@ -381,6 +410,21 @@ try:
                     ])
                     
                     comparison_result = comparison_response['message']['content'].strip()
+                    
+                    # Clean up comparison result to remove thinking
+                    if "<think>" in comparison_result:
+                        parts = comparison_result.split("</think>")
+                        if len(parts) > 1:
+                            comparison_result = parts[1].strip()
+                        else:
+                            parts = comparison_result.split("<think>")
+                            if len(parts) > 1:
+                                lines = parts[1].split("\n")
+                                for line in reversed(lines):
+                                    if line.strip() and (line.strip().startswith("YES") or line.strip().startswith("NO")):
+                                        comparison_result = line.strip()
+                                        break
+                                        
                     st.session_state.comparison_result = comparison_result
                     
                     # Determine if it's a positive or negative comparison
@@ -393,27 +437,11 @@ try:
                         st.success(comparison_result)
                     else:
                         st.error(comparison_result)
-                    
+                        
                 except Exception as e:
                     st.error(f"Error connecting to Ollama: {str(e)}")
                     st.info("Make sure Ollama is installed and running, and that you have the required model.")
-        
-        # Display the previously computed results if available
-        if st.session_state.llm_genres:
-            st.text_area("LLM Classified Genres", 
-                         ", ".join(st.session_state.llm_genres), 
-                         height=100, 
-                         key="stored_llm_genres")
-        
-        if st.session_state.comparison_result:
-            st.subheader("Comparison Result")
-            is_positive = "yes" in st.session_state.comparison_result.lower()
-            
-            if is_positive:
-                st.success(st.session_state.comparison_result)
-            else:
-                st.error(st.session_state.comparison_result)
-
+                    
 except Exception as e:
     st.error(f"Failed to initialize the analyzer: {str(e)}")
     st.info("Please check your internet connection and try again.")

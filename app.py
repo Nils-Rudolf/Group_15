@@ -438,3 +438,4 @@ try:
 except Exception as e:
     st.error(f"Failed to initialize the analyzer: {str(e)}")
     st.info("Please check your internet connection and try again.")
+    

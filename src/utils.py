@@ -1,3 +1,23 @@
+"""
+Plotting Utilities for the CMU Movie Corpus Analyzer
+
+This module provides helper functions for creating standardized plots used in the
+CMU Movie Corpus analysis. The functions generate matplotlib figures and axes
+based on the dataframes produced by the MovieCorpusAnalyzer class.
+
+Functions:
+    create_movie_type_plot: Creates a bar chart for movie type distribution
+    create_actor_count_plot: Creates a histogram for actor count distribution
+    create_height_distribution_plot: Creates a bar chart for actor height distribution
+
+Each function returns a dictionary containing the figure and axes objects,
+which can be used for further customization or rendering in various contexts.
+
+These utility functions help maintain consistent visualization styles across
+the application and separate the plotting logic from the data analysis.
+"""
+
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from typing import Dict, Any

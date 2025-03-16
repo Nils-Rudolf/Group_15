@@ -1,3 +1,26 @@
+"""
+CMU Movie Corpus Analyzer
+
+This module provides tools for downloading, extracting, and analyzing the CMU Movie Summary Corpus
+dataset, which contains movie metadata and character information from Wikipedia and Freebase.
+
+The module handles:
+1. Downloading the dataset archive from the CMU server
+2. Extracting relevant files from the archive
+3. Loading and parsing the data into pandas DataFrames
+4. Providing analysis methods for various aspects of the data:
+   - Movie type distributions
+   - Actor count distributions
+   - Actor height distributions by gender
+   - Movie releases by year and genre
+   - Actor birth statistics
+
+The primary class, MovieCorpusAnalyzer, manages all these operations and provides
+an interface for data analysis. It automatically handles the download and extraction
+of data files on initialization if they're not already available.
+"""
+
+
 import os
 import logging
 import urllib.request

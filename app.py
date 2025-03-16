@@ -295,35 +295,50 @@ try:
         if st.button("Classify with LLM"):
             with st.spinner("Classifying genres using LLM..."):
                 try:
-                    # Craft a prompt for the LLM
+                    # Simplify the prompt to avoid thinking output
                     prompt = f"""
-                    You are a movie genre classifier. Based on the title and summary, identify the genres of the following movie.
-                    Only respond with a comma-separated list of genres, nothing else.
+                    You are a movie genre classifier.
+                    For the following movie, provide ONLY a comma-separated list of genres with no explanation:
                     
                     Title: {movie['title']}
                     Summary: {movie['summary']}
-                    
-                    Genres:
                     """
                     
-                    # Call Ollama with the prompt
-                    response = ollama.chat(model="deepseek-r1:1.5b", messages=[
-                        {
-                            "role": "user",
-                            "content": prompt
-                        }
-                    ])
+                    # Call Ollama with your installed model
+                    response = ollama.chat(
+                        model="deepseek-r1:1.5b",  # Using your installed model
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": prompt
+                            }
+                        ],
+                        options={"temperature": 0.2}  # Lower temperature for more predictable output
+                    )
                     
-                    # Extract the genres from the response
-                    llm_genres = response['message']['content'].strip().split(", ")
+                    # Process response to extract just genres
+                    raw_response = response['message']['content'].strip()
+                    
+                    # Clean the response to handle potential thinking output
+                    if "<think>" in raw_response:
+                        # Remove thinking part
+                        raw_response = raw_response.replace("<think>", "").split("\n")[-1]
+                        
+                    # Further cleaning
+                    for prefix in ["Genres:", "genres:", "Genre:", "genre:"]:
+                        if prefix in raw_response:
+                            raw_response = raw_response.split(prefix, 1)[1].strip()
+                            
+                    # Get clean list of genres
+                    llm_genres = [genre.strip() for genre in raw_response.split(",")]
                     st.session_state.llm_genres = llm_genres
                     
                     # Display the LLM genres
                     st.text_area("LLM Classified Genres", 
                                  ", ".join(llm_genres), 
                                  height=100, 
-                                 key="llm_genres")
-                    
+                                 key="llm_genres_updated")
+                                
                     # Now let's do the comparison
                     second_prompt = f"""
                     Compare these two lists of movie genres:

@@ -295,47 +295,70 @@ try:
         if st.button("Classify with LLM"):
             with st.spinner("Classifying genres using LLM..."):
                 try:
-                    # Simplify the prompt to avoid thinking output
+                    # Much more explicit prompt
                     prompt = f"""
-                    You are a movie genre classifier.
-                    For the following movie, provide ONLY a comma-separated list of genres with no explanation:
+                    Your task is to analyze a movie description and classify it into standard film genres.
+                    Respond with ONLY a comma-separated list of film genres (like "Drama, Comedy, Action").
+                    Do not include the movie title, explanations, or any other text.
                     
-                    Title: {movie['title']}
-                    Summary: {movie['summary']}
+                    Movie: {movie['title']}
+                    Description: {movie['summary']}
+                    
+                    EXPECTED RESPONSE FORMAT:
+                    Comedy, Drama, Musical
                     """
                     
                     # Call Ollama with your installed model
                     response = ollama.chat(
-                        model="deepseek-r1:1.5b",  # Using your installed model
+                        model="deepseek-r1:1.5b",
                         messages=[
+                            {
+                                "role": "system",
+                                "content": "You are a movie genre classifier that ONLY outputs genres as a comma-separated list."
+                            },
                             {
                                 "role": "user",
                                 "content": prompt
                             }
                         ],
-                        options={"temperature": 0.2}  # Lower temperature for more predictable output
+                        options={"temperature": 0.1}  # Even lower temperature
                     )
                     
                     # Process response to extract just genres
                     raw_response = response['message']['content'].strip()
                     
-                    # Clean the response to handle potential thinking output
+                    # Debug output
+                    st.write(f"Raw LLM response: {raw_response}")
+                    
+                    # Aggressive cleaning
                     if "<think>" in raw_response:
-                        # Remove thinking part
-                        raw_response = raw_response.replace("<think>", "").split("\n")[-1]
+                        cleaned = raw_response.split("<think>")[1].split("\n")[-1] if "\n" in raw_response else raw_response
+                    else:
+                        cleaned = raw_response
                         
-                    # Further cleaning
-                    for prefix in ["Genres:", "genres:", "Genre:", "genre:"]:
-                        if prefix in raw_response:
-                            raw_response = raw_response.split(prefix, 1)[1].strip()
+                    # Remove any references to the movie title
+                    cleaned = cleaned.replace(movie['title'], "")
+                    
+                    # Remove common prefixes
+                    for prefix in ["Genres:", "genres:", "Genre:", "genre:", "Classifications:", "The genres are:"]:
+                        if prefix in cleaned:
+                            cleaned = cleaned.split(prefix, 1)[1].strip()
                             
                     # Get clean list of genres
-                    llm_genres = [genre.strip() for genre in raw_response.split(",")]
+                    llm_genres = [genre.strip() for genre in cleaned.split(",") if genre.strip()]
+                    
+                    # If we still don't have any genres, try a fallback approach
+                    if not llm_genres:
+                        common_genres = ["Action", "Comedy", "Drama", "Documentary", "Horror", "Thriller", 
+                                        "Romance", "Science Fiction", "Animation", "Musical", "Short Film"]
+                        # Find any genre words in the raw response
+                        llm_genres = [genre for genre in common_genres if genre.lower() in raw_response.lower()]
+                        
                     st.session_state.llm_genres = llm_genres
                     
                     # Display the LLM genres
                     st.text_area("LLM Classified Genres", 
-                                 ", ".join(llm_genres), 
+                                 ", ".join(llm_genres) if llm_genres else "No genres identified", 
                                  height=100, 
                                  key="llm_genres_updated")
                                 

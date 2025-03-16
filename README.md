@@ -31,9 +31,19 @@ Group_15/
 
 ## Features
 
+**Movie Analysis**
 - **Movie Type Analysis**: Visualize the most common types of movies in the dataset
 - **Actor Count Analysis**: See the distribution of number of actors per movie
 - **Height Distribution**: Analyze actor heights filtered by gender and height range
+
+**Chronological Information**
+- **Movie Releases by Year**: Examine release trends with optional genre filtering
+- **Birth Statistics**: View actor birth distribution by year or month
+
+**LLM Classification**
+- **Displaying random movie information**: Visualize title, summary and genre of a random movie
+- **Genre Classification**: Use a local LLM to classify movie genres based on summaries
+- **Genre Comparison**: Automatically compare LLM classifications with database genres
 
 ## Installation
 

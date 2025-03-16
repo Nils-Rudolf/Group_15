@@ -392,11 +392,12 @@ try:
                     LLM classified genres: {', '.join(llm_genres)}
                     
                     Are any of the LLM classified genres contained in the database genres list?
+                    Answer exactly as you can see in OUTPUT format and in the examples.
                     OUTPUT FORMAT: Your response must start with "YES" or "NO" followed by a brief explanation that compares specific genres.
                     
                     For example:
-                    If database genres = "Comedy, Romance" and LLM genres = "Comedy, Drama"
-                    Respond with: "YES - Comedy is present in both lists, but Drama is not in the database genres."
+                    If database genres = "Comedy, Romance, Action, Thriller" and LLM genres = "Comedy, Drama, Action, Family, Thriller"
+                    Respond with: "YES - Comedy, Action, Thriller is present in both lists, but Drama, Family is not in the database genres."
                     
                     If database genres = "Action, Adventure" and LLM genres = "Comedy, Drama"
                     Respond with: "NO - None of the LLM genres (Comedy, Drama) appear in the database genres (Action, Adventure)."

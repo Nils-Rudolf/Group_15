@@ -244,38 +244,13 @@ try:
             """
             # Select a random movie row
             random_idx = random.randint(0, len(analyzer.movie_metadata) - 1)
-            movie = analyzer.movie_metadata.iloc[random_idx]
+            movie_row = analyzer.movie_metadata.iloc[random_idx]
             
-            # Extract title
-            title = movie.get('movie_name', 'Unknown Title')
+            # Get the movie ID
+            movie_id = movie_row['wikipedia_movie_id']
             
-            # Extract summary (check if a summary column exists)
-            summary = movie.get('summary', None)  # Replace 'summary' with the actual column name if available
-            
-            # If no summary, use placeholder
-            if not summary or pd.isna(summary):
-                summary = "Summary not available in the dataset"
-                
-            # Extract genres (handling dictionary format)
-            genres_raw = movie.get('genres', {})
-            
-            # Ensure it's a dictionary before extracting values
-            if isinstance(genres_raw, dict):
-                genres_list = list(genres_raw.values())
-            elif isinstance(genres_raw, str):  # If stored as a string, try converting it
-                try:
-                    genres_dict = eval(genres_raw)  # Safe conversion
-                    genres_list = list(genres_dict.values()) if isinstance(genres_dict, dict) else []
-                except:
-                    genres_list = []
-            else:
-                genres_list = []
-                
-            return {
-                'title': title,
-                'summary': summary,
-                'genres': genres_list
-            }
+            # Use the analyzer's get_movie_details method to get complete information
+            return analyzer.get_movie_details(movie_id)
             
         # Initialize session state for the movie data if it doesn't exist
         if 'current_movie' not in st.session_state:

@@ -39,6 +39,7 @@ class MovieCorpusAnalyzer:
         self.archive_path = os.path.join(download_dir, "MovieSummaries.tar.gz")
         self.data_path = os.path.join(download_dir, "character.metadata.tsv")
         self.movie_metadata_path = os.path.join(download_dir, "movie.metadata.tsv")
+        self.plot_summaries_path = os.path.join(download_dir, "plot_summaries.txt")
         self.column_names = [
             "wikipedia_movie_id", "freebase_movie_id", "release_date", "character_name",
             "actor_dob", "actor_gender", "actor_height", "actor_ethnicity",
@@ -105,24 +106,32 @@ class MovieCorpusAnalyzer:
         """
         Extract the required dataset files from the archive if they don't exist.
         """
-        needed_files = ["character.metadata.tsv", "movie.metadata.tsv"]
+        needed_files = ["character.metadata.tsv", "movie.metadata.tsv", "plot_summaries.txt"]
         files_to_extract = []
         
         for file in needed_files:
             file_path = os.path.join(self.download_dir, file)
             if not os.path.exists(file_path):
                 files_to_extract.append(file)
-        
+                
         if files_to_extract:
             logger.info(f"Extracting files from archive: {files_to_extract}")
             try:
                 with tarfile.open(self.archive_path, "r:gz") as tar:
+                    # Print available files for debugging
+                    logger.info("Files in archive:")
                     for member in tar.getmembers():
-                        for file_name in files_to_extract:
-                            if member.name.endswith(file_name):
-                                member.name = os.path.basename(member.name)  # Remove directory structure
-                                tar.extract(member, path=self.download_dir)
-                                logger.info(f"Extracted {file_name} successfully.")
+                        logger.info(f"  - {member.name}")
+                        
+                    # More robust extraction logic
+                    for member in tar.getmembers():
+                        basename = os.path.basename(member.name)
+                        if basename in needed_files:
+                            # Set the extraction path to just the basename
+                            extracted_name = basename
+                            member.name = basename
+                            tar.extract(member, path=self.download_dir)
+                            logger.info(f"Extracted {extracted_name} successfully.")
             except Exception as e:
                 logger.error(f"Failed to extract dataset: {e}")
                 raise
@@ -171,6 +180,21 @@ class MovieCorpusAnalyzer:
             
             logger.info(f"Loaded {len(self.movie_metadata)} movie records.")
             
+            # Load plot summaries
+            if os.path.exists(self.plot_summaries_path):
+                logger.info("Loading plot summaries into DataFrame...")
+                self.summaries = pd.read_csv(
+                    self.plot_summaries_path, 
+                    sep="\t", 
+                    header=None, 
+                    names=["wikipedia_movie_id", "summary"],
+                    encoding='utf-8'
+                )
+                logger.info(f"Loaded {len(self.summaries)} plot summaries.")
+            else:
+                logger.warning("Plot summaries file not found. Summaries will be unavailable.")
+                self.summaries = pd.DataFrame(columns=["wikipedia_movie_id", "summary"])
+                
         except Exception as e:
             logger.error(f"Failed to load data: {e}")
             raise
@@ -382,3 +406,38 @@ class MovieCorpusAnalyzer:
         else:
             # Default to year if invalid option
             return self.ages('Y')
+            
+    def get_movie_details(self, movie_id: int) -> Dict[str, Union[str, List[str]]]:
+        """
+        Retrieve movie title, summary, and genres for a given movie ID.
+        
+        Args:
+            movie_id (int): The Wikipedia movie ID.
+            
+        Returns:
+            Dict[str, Union[str, List[str]]]: Dictionary containing title, summary, and genres.
+        """
+        # Find the movie in the metadata
+        movie_row = self.movie_metadata[self.movie_metadata["wikipedia_movie_id"] == movie_id]
+        
+        if movie_row.empty:
+            return {"title": "Unknown Title", "summary": "Summary not available", "genres": []}
+            
+        # Extract the title
+        title = movie_row["movie_name"].values[0] if pd.notna(movie_row["movie_name"].values[0]) else "Unknown Title"
+        
+        # Fetch the summary from plot_summaries.tsv
+        summary_row = self.summaries[self.summaries["wikipedia_movie_id"] == movie_id]
+        summary = summary_row["summary"].values[0] if not summary_row.empty else "Summary not available"
+        
+        # Extract genres and format them properly
+        genres_raw = movie_row["genres"].values[0] if pd.notna(movie_row["genres"].values[0]) else "{}"
+        
+        try:
+            genres_dict = eval(genres_raw) if isinstance(genres_raw, str) else genres_raw
+            genres_list = list(genres_dict.values()) if isinstance(genres_dict, dict) else []
+        except Exception as e:
+            genres_list = []
+            logger.warning(f"Error parsing genres for movie ID {movie_id}: {e}")
+            
+        return {"title": title, "summary": summary, "genres": genres_list}

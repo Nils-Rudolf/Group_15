@@ -1,23 +1,18 @@
 """
-CMU Movie Corpus Analyzer
+CMU Movie Corpus Analyzer Web Application
 
-This module provides tools for downloading, extracting, and analyzing the CMU Movie Summary Corpus
-dataset, which contains movie metadata and character information from Wikipedia and Freebase.
+This Streamlit application provides an interface for analyzing the CMU Movie Summary Corpus dataset,
+which contains movie metadata and character information. The app visualizes various aspects of the data
+including movie types, actor counts, and actor height distributions.
 
-The module handles:
-1. Downloading the dataset archive from the CMU server
-2. Extracting relevant files from the archive
-3. Loading and parsing the data into pandas DataFrames
-4. Providing analysis methods for various aspects of the data:
-   - Movie type distributions
-   - Actor count distributions
-   - Actor height distributions by gender
-   - Movie releases by year and genre
-   - Actor birth statistics
+Features:
+- Movie Type Analysis: Visualization of the most common types of movies in the dataset
+- Actor Count Analysis: Distribution of the number of actors per movie
+- Height Distribution: Analysis of actor heights filtered by gender and height range
+- Chronological Information: Movie releases by year with optional genre filtering
+- Text Classification: Movie genre classification using LLMs (requires Ollama)
 
-The primary class, MovieCorpusAnalyzer, manages all these operations and provides
-an interface for data analysis. It automatically handles the download and extraction
-of data files on initialization if they're not 
+The application automatically downloads and processes the required data on the first run.
 """
 
 
